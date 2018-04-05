@@ -1,18 +1,17 @@
 $(function(){
-    var log = chrome.extension.getBackgroundPage().console.log;
-  
-    var mouseTimer,showingOff;
-    // batUpdate();
+    let log = chrome.extension.getBackgroundPage().console.log;
+
+    getDevices();
+    renderDevices();
 
     // '[{"id":1111,"deviceName":"samsung galaxy s8","percentage":14},{"id":2222,"deviceName":"samsung note 8","percentage":56},{"id":3333,"deviceName":"iphone 7","percentage":81}]';
 
-    let devices = getDevices();
-    if (devices) {
-
+    function renderDevices(devices) {
+      devices = devices ? devices : getDevicesFromStorage();
       if (devices) {
-
-        for( let i = 0; i < devices.length; i++) {
-          let { deviceName, percentage, id} = devices[i];
+        $('.content').html('');
+        devices.map(device => {
+          let { deviceName, percentage, id} = device;
           let deviceHtml = `
             <div class="device">
                 <h3>${deviceName}</h3>
@@ -24,26 +23,22 @@ $(function(){
           `;
           $('.content').append(deviceHtml);
           batUpdate(id, percentage);
-        }
+        })
+      }
     }
 
-      
-        // devices.map(device => {
-        //   let { deviceName, percentage, id} = device;
-        //   let deviceHtml = `
-        //     <div class="device">
-        //         <h3>${deviceName}</h3>
-        //         <h1>${percentage}%</h1>
-        //         <div class="battery-${id}">
-        //             <div></div>
-        //         </div>
-        //     </div>
-        //   `;
-        //   $('.content').append(deviceHtml);
-        //   batUpdate(id, percentage);
-        //   // batUpdate();
-        // })
+
+    function getDevices() {
+      let ids = getIds();
+      if (ids) {
+        sendMessage({type: 'getDevices', ids: JSON.stringify(ids)} , (response) => {
+          log(response)
+          renderDevices();
+        })
+      }
     }
+    
+
 
     $('body').on('click', '.add-device-btn', () => {
       let id = Number($('.add-device-inp').val());
@@ -65,7 +60,7 @@ $(function(){
     }
 
 
-    function getDevices() {
+    function getDevicesFromStorage() {
       let devices = localStorage.getItem('devices');
       if (devices) {
           return JSON.parse(devices);
@@ -73,14 +68,8 @@ $(function(){
     }
 
     function getIds() {
-      let devices = getDevices();
-      if (devices) {
-          let ids = [];
-          devices.map((device) => {
-            return device.id
-          });
-          return ids;
-      }
+      let devices = getDevicesFromStorage();
+      return  devices ? devices.map(device => device.id) : undefined;
     }
 
     function batUpdate(id, percentage){

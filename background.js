@@ -1,4 +1,4 @@
-const HOST = "http://f67ebb71.ngrok.io";
+const HOST = "http://7e2f0518.ngrok.io";
 
 
 chrome.runtime.onMessage.addListener(
@@ -6,10 +6,22 @@ chrome.runtime.onMessage.addListener(
       if (request.type === "getData") {
         sendRequest(generateQuery(request))
         .then(data => sendResponse(data));
+      } else if (request.type === "getDevices") {
+        sendRequest(generateQuery(request))
+        .then(data => {
+            storeDevices(JSON.stringify(data));
+            sendResponse(data)
+        });
       } 
+
+      
       return true; 
 });
 
+
+function storeDevices(devices) {
+    localStorage.setItem('devices', devices)
+}
 
 function generateQuery(query) {
     let url = HOST;
@@ -18,6 +30,7 @@ function generateQuery(query) {
         url + '&' + value + '=' + query[value] :
         url + '?' + value + '=' + query[value]; 
     })
+    console.log(url)
     return url;
 }
 
