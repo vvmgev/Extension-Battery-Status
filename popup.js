@@ -1,24 +1,25 @@
 $(function(){
     let log = chrome.extension.getBackgroundPage().console.log;
 
-    getDevices();
     renderDevices();
+    getDevices();
 
     // '[{"id":1111,"deviceName":"samsung galaxy s8","percentage":14},{"id":2222,"deviceName":"samsung note 8","percentage":56},{"id":3333,"deviceName":"iphone 7","percentage":81}]';
 
     function renderDevices(devices) {
-      devices = devices ? devices : getDevicesFromStorage();
+      devices = devices ? devices : getFromStorage('devices');
       if (devices) {
         $('.content').html('');
         devices.map(device => {
           let { deviceName, percentage, id} = device;
           let deviceHtml = `
-            <div class="device">
+            <div class="device" id="battery-${id}">
                 <h3>${deviceName}</h3>
                 <h1>${percentage}%</h1>
-                <div class="battery" id="battery-${id}">
+                <div class="battery">
                     <div></div>
                 </div>
+                <div class="loader"></div>
             </div>
           `;
           $('.content').append(deviceHtml);
@@ -31,21 +32,19 @@ $(function(){
     function getDevices() {
       let ids = getIds();
       if (ids) {
-        sendMessage({type: 'getDevices', ids: JSON.stringify(ids)} , (response) => {
-          log(response)
-          renderDevices();
+        $('.device .loader').addClass('show');
+        sendMessage({type: 'getDevices', ids: JSON.stringify(ids)} , (devices) => {
+          renderDevices(devices);
         })
       }
     }
-    
-
 
     $('body').on('click', '.add-device-btn', () => {
       let id = Number($('.add-device-inp').val());
       if (!isNaN(id)) {
         sendMessage({type: 'getDevice', id} , (response) => {
-          setBattery(response);
-        })
+          renderDevices();
+        });
       } else {
         alert('NaN')
       }
@@ -59,16 +58,16 @@ $(function(){
       });
     }
 
-
-    function getDevicesFromStorage() {
-      let devices = localStorage.getItem('devices');
-      if (devices) {
-          return JSON.parse(devices);
-      }
+    function storeToStorage(key, data) {
+        localStorage.setItem(key, JSON.stringify(data))
+    }
+    function getFromStorage(key) {
+        let data = localStorage.getItem(key);
+        return data ? JSON.parse(data) : undefined;
     }
 
     function getIds() {
-      let devices = getDevicesFromStorage();
+      let devices = getFromStorage('devices');
       return  devices ? devices.map(device => device.id) : undefined;
     }
 
@@ -83,7 +82,7 @@ $(function(){
         // Green - All good!
         col = ["#316d08","#60b939", "#51aa31", "#64ce11", "#255405"];
       }
-      $(`#battery-${id} div`).css("background-image","linear-gradient(to right, transparent 5%, "+col[0]+" 5%, "+col[0]+" 7%, "+col[1]+" 8%, "+col[1]+" 10%, "+col[2]+" 11%, "+col[2]+" "+ (percentage-3) +"%, "+col[3]+" "+ (percentage-2) +"%, "+col[3]+" "+ percentage +"%, "+col[4]+" "+ percentage +"%, black "+ (percentage+5) +"%, black 95%, transparent 95%), linear-gradient(to bottom, rgba(255,255,255,0.5) 0%, rgba(255,255,255,0.4) 4%, rgba(255,255,255,0.2) 7%, rgba(255,255,255,0.2) 14%, rgba(255,255,255,0.8) 14%, rgba(255,255,255,0.2) 40%, rgba(255,255,255,0) 41%, rgba(255,255,255,0) 80%, rgba(255,255,255,0.2) 80%, rgba(255,255,255,0.4) 86%, rgba(255,255,255,0.6) 90%, rgba(255,255,255,0.1) 92%, rgba(255,255,255,0.1) 95%, rgba(255,255,255,0.5) 98%)");
+      $(`#battery-${id} .battery div`).css("background-image","linear-gradient(to right, transparent 5%, "+col[0]+" 5%, "+col[0]+" 7%, "+col[1]+" 8%, "+col[1]+" 10%, "+col[2]+" 11%, "+col[2]+" "+ (percentage-3) +"%, "+col[3]+" "+ (percentage-2) +"%, "+col[3]+" "+ percentage +"%, "+col[4]+" "+ percentage +"%, black "+ (percentage+5) +"%, black 95%, transparent 95%), linear-gradient(to bottom, rgba(255,255,255,0.5) 0%, rgba(255,255,255,0.4) 4%, rgba(255,255,255,0.2) 7%, rgba(255,255,255,0.2) 14%, rgba(255,255,255,0.8) 14%, rgba(255,255,255,0.2) 40%, rgba(255,255,255,0) 41%, rgba(255,255,255,0) 80%, rgba(255,255,255,0.2) 80%, rgba(255,255,255,0.4) 86%, rgba(255,255,255,0.6) 90%, rgba(255,255,255,0.1) 92%, rgba(255,255,255,0.1) 95%, rgba(255,255,255,0.5) 98%)");
     }
 })
 

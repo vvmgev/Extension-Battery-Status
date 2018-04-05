@@ -1,26 +1,41 @@
-const HOST = "http://7e2f0518.ngrok.io";
-
+const HOST = "http://b57df09d.ngrok.io";
 
 chrome.runtime.onMessage.addListener(
-    function(request, sender, sendResponse) {
-      if (request.type === "getData") {
+    (request, sender, sendResponse) => {
+      if (request.type === "getDevice") {
         sendRequest(generateQuery(request))
-        .then(data => sendResponse(data));
+        .then(data => {
+            console.log(data)
+            if(!data.error) {
+                let id = data.id,
+                    devicesFromStorage = getFromStorage('devices');
+                    devices = devicesFromStorage ? devicesFromStorage : [];
+                if (devices) {
+                    devices.push(data);
+                } else {
+                    devices.push(data);
+                }
+                storeToStorage('devices', devices);
+                sendResponse();
+            }
+        });
       } else if (request.type === "getDevices") {
         sendRequest(generateQuery(request))
         .then(data => {
-            storeDevices(JSON.stringify(data));
+            storeToStorage('devices', data);
             sendResponse(data)
         });
-      } 
-
-      
+      }
       return true; 
 });
 
 
-function storeDevices(devices) {
-    localStorage.setItem('devices', devices)
+function storeToStorage(key, data) {
+    localStorage.setItem(key, JSON.stringify(data))
+}
+function getFromStorage(key) {
+    let data = localStorage.getItem(key);
+    return data ? JSON.parse(data) : undefined;
 }
 
 function generateQuery(query) {
@@ -30,10 +45,8 @@ function generateQuery(query) {
         url + '&' + value + '=' + query[value] :
         url + '?' + value + '=' + query[value]; 
     })
-    console.log(url)
     return url;
 }
-
 
 async function sendRequest(url) {
     let response = await fetch(url),
