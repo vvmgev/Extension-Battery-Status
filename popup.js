@@ -1,19 +1,55 @@
 $(function(){
     var log = chrome.extension.getBackgroundPage().console.log;
   
-    var mouseTimer,showingOff, charge = default_charge = 50;
-        batUpdate();
+    var mouseTimer,showingOff;
+    // batUpdate();
 
-    // sendMessage({type: 'getPercentage'} , (response) => {
-    //   log(response)
-    // })
+    // '[{"id":1111,"deviceName":"samsung galaxy s8","percentage":14},{"id":2222,"deviceName":"samsung note 8","percentage":56},{"id":3333,"deviceName":"iphone 7","percentage":81}]';
 
+    let devices = getDevices();
+    if (devices) {
+
+      if (devices) {
+
+        for( let i = 0; i < devices.length; i++) {
+          let { deviceName, percentage, id} = devices[i];
+          let deviceHtml = `
+            <div class="device">
+                <h3>${deviceName}</h3>
+                <h1>${percentage}%</h1>
+                <div class="battery" id="battery-${id}">
+                    <div></div>
+                </div>
+            </div>
+          `;
+          $('.content').append(deviceHtml);
+          batUpdate(id, percentage);
+        }
+    }
+
+      
+        // devices.map(device => {
+        //   let { deviceName, percentage, id} = device;
+        //   let deviceHtml = `
+        //     <div class="device">
+        //         <h3>${deviceName}</h3>
+        //         <h1>${percentage}%</h1>
+        //         <div class="battery-${id}">
+        //             <div></div>
+        //         </div>
+        //     </div>
+        //   `;
+        //   $('.content').append(deviceHtml);
+        //   batUpdate(id, percentage);
+        //   // batUpdate();
+        // })
+    }
 
     $('body').on('click', '.add-device-btn', () => {
       let id = Number($('.add-device-inp').val());
       if (!isNaN(id)) {
-        sendMessage({type: 'getData', id} , (response) => {
-          setBatter(response);
+        sendMessage({type: 'getDevice', id} , (response) => {
+          setBattery(response);
         })
       } else {
         alert('NaN')
@@ -29,55 +65,36 @@ $(function(){
     }
 
 
-    let id = response.id,
-    percentage = response.percentage;
-    charge = default_charge = Number(percentage);
-    batUpdate();
+    function getDevices() {
+      let devices = localStorage.getItem('devices');
+      if (devices) {
+          return JSON.parse(devices);
+      }
+    }
 
-        
+    function getIds() {
+      let devices = getDevices();
+      if (devices) {
+          let ids = [];
+          devices.map((device) => {
+            return device.id
+          });
+          return ids;
+      }
+    }
 
-
-        //   $("#buttons div").mousedown(function(){
-        //     var charging = $(this).hasClass("more");
-        //     mouseTimer = setInterval(function(){
-        //       if(charge>1 && !charging){
-        //         charge--;
-        //       }else if(charge<100 && charging){
-        //         charge++;
-        //       }else{
-        //         return false;
-        //       }
-        //       batUpdate();
-        //     },250);
-        //   }).click(function(){
-        //     clearInterval(mouseTimer);
-        //     if(charge>1 && !$(this).hasClass("more")){
-        //       charge--;
-        //     }else if(charge<100 && $(this).hasClass("more")){
-        //       charge++;
-        //     }else{
-        //       return false;
-        //     }
-        //     batUpdate();
-        //     log(charge)
-        //   });
-          // $(document).mouseup(function(){
-            // clearInterval(mouseTimer);
-            // return false;
-          // });
-          function batUpdate(){
-            //console.log("Charge: ",charge);
-            if(charge<20){
-              // Red - Danger!
-              col = ["#750900","#c6462b", "#b74424", "#df0a00", "#590700"];
-            }else if(charge<40){
-              // Yellow - Might wanna charge soon...
-              col = ["#754f00","#f2bb00", "#dbb300", "#df8f00", "#593c00"];
-            }else{
-              // Green - All good!
-              col = ["#316d08","#60b939", "#51aa31", "#64ce11", "#255405"];
-            }
-            $(".battery div").css("background-image","linear-gradient(to right, transparent 5%, "+col[0]+" 5%, "+col[0]+" 7%, "+col[1]+" 8%, "+col[1]+" 10%, "+col[2]+" 11%, "+col[2]+" "+ (charge-3) +"%, "+col[3]+" "+ (charge-2) +"%, "+col[3]+" "+ charge +"%, "+col[4]+" "+ charge +"%, black "+ (charge+5) +"%, black 95%, transparent 95%), linear-gradient(to bottom, rgba(255,255,255,0.5) 0%, rgba(255,255,255,0.4) 4%, rgba(255,255,255,0.2) 7%, rgba(255,255,255,0.2) 14%, rgba(255,255,255,0.8) 14%, rgba(255,255,255,0.2) 40%, rgba(255,255,255,0) 41%, rgba(255,255,255,0) 80%, rgba(255,255,255,0.2) 80%, rgba(255,255,255,0.4) 86%, rgba(255,255,255,0.6) 90%, rgba(255,255,255,0.1) 92%, rgba(255,255,255,0.1) 95%, rgba(255,255,255,0.5) 98%)");
-          }
-    })
+    function batUpdate(id, percentage){
+      if(percentage<20){
+        // Red - Danger!
+        col = ["#750900","#c6462b", "#b74424", "#df0a00", "#590700"];
+      }else if(percentage<40){
+        // Yellow - Might wanna charge soon...
+        col = ["#754f00","#f2bb00", "#dbb300", "#df8f00", "#593c00"];
+      }else{
+        // Green - All good!
+        col = ["#316d08","#60b939", "#51aa31", "#64ce11", "#255405"];
+      }
+      $(`#battery-${id} div`).css("background-image","linear-gradient(to right, transparent 5%, "+col[0]+" 5%, "+col[0]+" 7%, "+col[1]+" 8%, "+col[1]+" 10%, "+col[2]+" 11%, "+col[2]+" "+ (percentage-3) +"%, "+col[3]+" "+ (percentage-2) +"%, "+col[3]+" "+ percentage +"%, "+col[4]+" "+ percentage +"%, black "+ (percentage+5) +"%, black 95%, transparent 95%), linear-gradient(to bottom, rgba(255,255,255,0.5) 0%, rgba(255,255,255,0.4) 4%, rgba(255,255,255,0.2) 7%, rgba(255,255,255,0.2) 14%, rgba(255,255,255,0.8) 14%, rgba(255,255,255,0.2) 40%, rgba(255,255,255,0) 41%, rgba(255,255,255,0) 80%, rgba(255,255,255,0.2) 80%, rgba(255,255,255,0.4) 86%, rgba(255,255,255,0.6) 90%, rgba(255,255,255,0.1) 92%, rgba(255,255,255,0.1) 95%, rgba(255,255,255,0.5) 98%)");
+    }
+})
 
